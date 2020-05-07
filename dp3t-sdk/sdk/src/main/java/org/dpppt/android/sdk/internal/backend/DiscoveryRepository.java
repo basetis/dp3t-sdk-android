@@ -13,6 +13,7 @@ import java.io.IOException;
 import org.dpppt.android.sdk.backend.ResponseCallback;
 import org.dpppt.android.sdk.internal.backend.models.ApplicationsList;
 
+import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -24,10 +25,12 @@ public class DiscoveryRepository implements Repository {
 	private DiscoveryService discoveryService;
 
 	public DiscoveryRepository(@NonNull Context context) {
+		HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
+		logging.setLevel(HttpLoggingInterceptor.Level.BODY);
 
 		Retrofit retrofit = new Retrofit.Builder()
 				.baseUrl("https://discovery.dpppt.org/")
-				.client(getClientBuilder(context).build())
+				.client(getClientBuilder(context)/*.addInterceptor(logging)*/.build())
 				.addConverterFactory(GsonConverterFactory.create())
 				.build();
 

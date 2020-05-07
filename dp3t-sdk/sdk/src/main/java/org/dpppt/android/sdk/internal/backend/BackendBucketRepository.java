@@ -17,6 +17,7 @@ import org.dpppt.android.sdk.backend.SignatureException;
 import org.dpppt.android.sdk.backend.SignatureVerificationInterceptor;
 import org.dpppt.android.sdk.internal.backend.proto.Exposed;
 
+import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.protobuf.ProtoConverterFactory;
@@ -28,9 +29,14 @@ public class BackendBucketRepository implements Repository {
 	private BucketService bucketService;
 
 	public BackendBucketRepository(@NonNull Context context, @NonNull String bucketBaseUrl, @NonNull PublicKey publicKey) {
+
+		HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
+		logging.setLevel(HttpLoggingInterceptor.Level.BODY);
+
 		Retrofit bucketRetrofit = new Retrofit.Builder()
 				.baseUrl(bucketBaseUrl)
 				.client(getClientBuilder(context)
+						//.addInterceptor(logging)
 						.addInterceptor(new TimingVerificationInterceptor())
 						.addInterceptor(new SignatureVerificationInterceptor(publicKey))
 						.build())

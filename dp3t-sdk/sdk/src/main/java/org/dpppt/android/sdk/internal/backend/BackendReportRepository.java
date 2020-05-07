@@ -15,6 +15,7 @@ import org.dpppt.android.sdk.backend.models.ExposeeAuthMethod;
 import org.dpppt.android.sdk.backend.models.ExposeeAuthMethodAuthorization;
 import org.dpppt.android.sdk.internal.backend.models.ExposeeRequest;
 
+import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -26,9 +27,12 @@ public class BackendReportRepository implements Repository {
 	private ReportService reportService;
 
 	public BackendReportRepository(@NonNull Context context, String reportBaseUrl) {
+		HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
+		logging.setLevel(HttpLoggingInterceptor.Level.BODY);
+
 		Retrofit reportRetrofit = new Retrofit.Builder()
 				.baseUrl(reportBaseUrl)
-				.client(getClientBuilder(context).build())
+				.client(getClientBuilder(context)/*.addInterceptor(logging)*/.build())
 				.addConverterFactory(GsonConverterFactory.create())
 				.build();
 
