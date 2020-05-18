@@ -38,30 +38,30 @@ public class SignatureVerificationInterceptor implements Interceptor {
 			return response;
 		}
 
-//		String jwsHeader = response.headers().get(SignatureUtil.HTTP_HEADER_JWS);
-//		if (jwsHeader == null) {
-//			throw new SignatureException("JWS header not found");
-//		}
-//
-//		if (publicKey == null) {
-//			throw new SignatureException("Public key not specified");
-//		}
-//
-//		byte[] signedContentHash = SignatureUtil.getVerifiedContentHash(jwsHeader, publicKey);
-//
-//		byte[] body = response.peekBody(PEEK_MEMORY_LIMIT).bytes();
-//
-//		byte[] actualContentHash;
-//		try {
-//			MessageDigest digest = MessageDigest.getInstance(SignatureUtil.HASH_ALGO);
-//			actualContentHash = digest.digest(body);
-//		} catch (NoSuchAlgorithmException e) {
-//			throw new RuntimeException(e);
-//		}
-//
-//		if (!Arrays.equals(actualContentHash, signedContentHash)) {
-//			throw new SignatureException("Signature mismatch");
-//		}
+		String jwsHeader = response.headers().get(SignatureUtil.HTTP_HEADER_JWS);
+		if (jwsHeader == null) {
+			throw new SignatureException("JWS header not found");
+		}
+
+		if (publicKey == null) {
+			throw new SignatureException("Public key not specified");
+		}
+
+		byte[] signedContentHash = SignatureUtil.getVerifiedContentHash(jwsHeader, publicKey);
+
+		byte[] body = response.peekBody(PEEK_MEMORY_LIMIT).bytes();
+
+		byte[] actualContentHash;
+		try {
+			MessageDigest digest = MessageDigest.getInstance(SignatureUtil.HASH_ALGO);
+			actualContentHash = digest.digest(body);
+		} catch (NoSuchAlgorithmException e) {
+			throw new RuntimeException(e);
+		}
+
+		if (!Arrays.equals(actualContentHash, signedContentHash)) {
+			throw new SignatureException("Signature mismatch");
+		}
 
 		return response;
 	}

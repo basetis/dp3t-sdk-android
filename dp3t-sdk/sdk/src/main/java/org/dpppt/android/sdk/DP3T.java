@@ -9,6 +9,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.database.sqlite.SQLiteException;
+import android.util.Log;
+
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 
@@ -57,14 +59,20 @@ public class DP3T {
 	}
 
 	public static void init(Context context, String appId, boolean enableDevDiscoveryMode, PublicKey signaturePublicKey) {
+		Log.d("DEBUG", "DEBUG MAIN PROCES?");
+
 		if (ProcessUtil.isMainProcess(context)) {
 			DP3T.appId = appId;
 			AppConfigManager appConfigManager = AppConfigManager.getInstance(context);
 			appConfigManager.setAppId(appId);
 			appConfigManager.setDevDiscoveryModeEnabled(enableDevDiscoveryMode);
 			appConfigManager.triggerLoad();
+			Log.d("DEBUG", "DEBUG INIT");
 
 			executeInit(context, signaturePublicKey);
+		}else{
+			Log.d("DEBUG", "DEBUG NO MAIN PROCESS");
+
 		}
 	}
 
