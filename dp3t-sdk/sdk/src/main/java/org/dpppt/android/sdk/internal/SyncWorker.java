@@ -73,7 +73,7 @@ public class SyncWorker extends Worker {
 		TracingService.scheduleNextServerRestart(context);
 
 		try {
-			doSync(context);
+			doSync(context, false);
 		} catch (IOException | StatusCodeException | ServerTimeOffsetException | SignatureException | SQLiteException e) {
 			Logger.d(TAG, "SyncWorker finished with exception " + e.getMessage());
 			return Result.retry();
@@ -82,10 +82,10 @@ public class SyncWorker extends Worker {
 		return Result.success();
 	}
 
-	public static void doSync(Context context)
+	public static void doSync(Context context, boolean forceSync)
 			throws IOException, StatusCodeException, ServerTimeOffsetException, SQLiteException, SignatureException {
 		try {
-			doSyncInternal(context);
+			doSyncInternal(context, forceSync);
 			Logger.i(TAG, "synced");
 			AppConfigManager.getInstance(context).setLastSyncNetworkSuccess(true);
 			SyncErrorState.getInstance().setSyncError(null);
@@ -111,7 +111,7 @@ public class SyncWorker extends Worker {
 		}
 	}
 
-	private static void doSyncInternal(Context context) throws IOException, StatusCodeException, ServerTimeOffsetException {
+	private static void doSyncInternal(Context context, boolean forceSync) throws IOException, StatusCodeException, ServerTimeOffsetException {
 		AppConfigManager appConfigManager = AppConfigManager.getInstance(context);
 		appConfigManager.updateFromDiscoverySynchronous();
 		ApplicationInfo appConfig = appConfigManager.getAppConfig();
@@ -121,6 +121,7 @@ public class SyncWorker extends Worker {
 
 		long lastLoadedBatchReleaseTime = appConfigManager.getLastLoadedBatchReleaseTime();
 		long nextBatchReleaseTime;
+
 		if (lastLoadedBatchReleaseTime <= 0 || lastLoadedBatchReleaseTime % BATCH_LENGTH != 0) {
 			long now = System.currentTimeMillis();
 			nextBatchReleaseTime = now - (now % BATCH_LENGTH);
@@ -130,9 +131,16 @@ public class SyncWorker extends Worker {
 
 		BackendBucketRepository backendBucketRepository =
 				new BackendBucketRepository(context, appConfig.getBucketBaseUrl(), bucketSignaturePublicKey);
+		long maxBatchReleaseTime;
+		
+		if (forceSync) {
+			maxBatchReleaseTime = System.currentTimeMillis() + BATCH_LENGTH;
+		} else {
+			maxBatchReleaseTime = System.currentTimeMillis();
+		}
 
 		for (long batchReleaseTime = nextBatchReleaseTime;
-			 batchReleaseTime < System.currentTimeMillis();
+			 batchReleaseTime < maxBatchReleaseTime;
 			 batchReleaseTime += BATCH_LENGTH) {
 
 			Exposed.ProtoExposedList result = backendBucketRepository.getExposees(batchReleaseTime);
@@ -146,9 +154,10 @@ public class SyncWorker extends Worker {
 				);
 			}
 
-			appConfigManager.setLastLoadedBatchReleaseTime(batchReleaseTime);
+			if (batchReleaseTime <= System.currentTimeMillis()) {
+				appConfigManager.setLastLoadedBatchReleaseTime(batchReleaseTime);
+			}
 		}
-
 		database.removeOldData();
 
 		appConfigManager.setLastSyncDate(System.currentTimeMillis());

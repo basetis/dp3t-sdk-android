@@ -134,10 +134,10 @@ public class DP3T {
 		return appConfigManager.isAdvertisingEnabled() || appConfigManager.isReceivingEnabled();
 	}
 
-	public static void sync(Context context) {
+	public static void sync(Context context, boolean forceSync) {
 		checkInit();
 		try {
-			SyncWorker.doSync(context);
+			SyncWorker.doSync(context, forceSync);
 		} catch (IOException | StatusCodeException | ServerTimeOffsetException | SQLiteException | SignatureException ignored) {
 			// has been handled upstream
 		}
