@@ -38,7 +38,7 @@ public class BackendBucketRepository implements Repository {
 				.client(getClientBuilder(context)
 						//.addInterceptor(logging)
 						.addInterceptor(new TimingVerificationInterceptor())
-						.addInterceptor(new SignatureVerificationInterceptor(publicKey))
+//						.addInterceptor(new SignatureVerificationInterceptor(publicKey))
 						.build())
 				.addConverterFactory(ProtoConverterFactory.create())
 				.build();

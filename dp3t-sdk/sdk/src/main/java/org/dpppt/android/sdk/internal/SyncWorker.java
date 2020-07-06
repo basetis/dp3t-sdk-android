@@ -73,7 +73,7 @@ public class SyncWorker extends Worker {
 		TracingService.scheduleNextServerRestart(context);
 
 		try {
-			doSync(context, false);
+			doSync(context, false, null);
 		} catch (IOException | StatusCodeException | ServerTimeOffsetException | SignatureException | SQLiteException e) {
 			Logger.d(TAG, "SyncWorker finished with exception " + e.getMessage());
 			return Result.retry();
@@ -82,16 +82,19 @@ public class SyncWorker extends Worker {
 		return Result.success();
 	}
 
-	public static void doSync(Context context, boolean forceSync)
+	public static void doSync(Context context, boolean forceSync, OnSyncComplete callback)
 			throws IOException, StatusCodeException, ServerTimeOffsetException, SQLiteException, SignatureException {
 		try {
-			doSyncInternal(context, forceSync);
+			doSyncInternal(context, forceSync, callback);
 			Logger.i(TAG, "synced");
 			AppConfigManager.getInstance(context).setLastSyncNetworkSuccess(true);
 			SyncErrorState.getInstance().setSyncError(null);
 			BroadcastHelper.sendErrorUpdateBroadcast(context);
 		} catch (IOException | StatusCodeException | ServerTimeOffsetException | SignatureException | SQLiteException e) {
 			Logger.e(TAG, e);
+			if (callback != null) {
+				callback.onError();
+			}
 			AppConfigManager.getInstance(context).setLastSyncNetworkSuccess(false);
 			ErrorState syncError;
 			if (e instanceof ServerTimeOffsetException) {
@@ -111,7 +114,7 @@ public class SyncWorker extends Worker {
 		}
 	}
 
-	private static void doSyncInternal(Context context, boolean forceSync) throws IOException, StatusCodeException, ServerTimeOffsetException {
+	private static void doSyncInternal(Context context, boolean forceSync, OnSyncComplete callback) throws IOException, StatusCodeException, ServerTimeOffsetException {
 		AppConfigManager appConfigManager = AppConfigManager.getInstance(context);
 		appConfigManager.updateFromDiscoverySynchronous();
 		ApplicationInfo appConfig = appConfigManager.getAppConfig();
@@ -154,6 +157,10 @@ public class SyncWorker extends Worker {
 				);
 			}
 
+			if (callback != null) {
+				callback.onSuccess();
+			}
+
 			if (batchReleaseTime <= System.currentTimeMillis()) {
 				appConfigManager.setLastLoadedBatchReleaseTime(batchReleaseTime);
 			}
@@ -161,6 +168,10 @@ public class SyncWorker extends Worker {
 		database.removeOldData();
 
 		appConfigManager.setLastSyncDate(System.currentTimeMillis());
+	}
+	public interface OnSyncComplete {
+		void onSuccess();
+		void onError();
 	}
 
 }
